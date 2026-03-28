@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+<head>
+
+    <meta charset="UTF-8">
+    <title>次方與根號計算</title>
+
+</head>
+<body>
+
+    <form action="/calculate" method="post">
+
+        x：
+        <input type="number" name="number_x" value="{{ x }}"required>
+
+        <br><br>運算：
+        <select type="text" name="opt" value="">
+            <option value="∧">∧ (次方)</option>
+            <option value="√">√ (根號)</option>
+        </select>  
+
+    <br><br>y：
+    <input type="number" name="number_y" value="{{ y }}"required>
+
+    <br><br><button type="submit">開始計算</button>
+    
+    <br><br><strong>ans: {{ result }}</strong> 
+
+    <br><br>
+    <a href="/">返回首頁</a>
+
+    </form>
+</body>
+</html>

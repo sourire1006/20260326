@@ -10,6 +10,7 @@ def index():
     link += "<a href=/me>關於我</a><hr>"
     link += "<a href=/welcome?u=徐梓恩&d=靜宜行銷數位經營>Get傳值</a><hr>"
     link += "<a href=/account>post傳值</a><hr>"
+    link += "<a href=/calculate>次方根號傳值</a><hr>"
     return link
 
 @app.route("/mis")
@@ -38,7 +39,36 @@ def account():
         pwd = request.form["pwd"]
         result = "您輸入的帳號是：" + user + "; 密碼為：" + pwd
         return result
-    else:
-        return render_template("account.html")
+
+@app.route("/calculate", methods=["GET", "POST"])
+def calculate(): 
+    x = ""
+    y = ""
+    result = ""
+    opt = "∧"
+
+    if request.method == "POST":
+        try:
+            x = float(request.form["number_x"])
+            y = float(request.form["number_y"])
+            opt = request.form["opt"]
+      
+            if opt == "∧":
+                result = x ** y
+            elif opt == "√":
+                if y == 0:
+                    result = "錯誤"
+                else :
+                    result = x ** (1/y)
+            else:
+                result = "未知的運算符號"
+
+            print(result)
+
+        except Exception as e:  
+            result = f"錯誤：{e}"
+
+    return render_template("calculate.html", result=result, x=x, y=y, opt=opt)
+
 if __name__ == "__main__":
     app.run(debug=True)

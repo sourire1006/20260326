@@ -40,6 +40,9 @@ def account():
         result = "您輸入的帳號是：" + user + "; 密碼為：" + pwd
         return result
 
+    else:
+        return render_template("account.html")
+        
 @app.route("/calculate", methods=["GET", "POST"])
 def calculate(): 
     x = ""

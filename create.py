@@ -7,10 +7,10 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 doc = {
-  "name": "徐梓恩20260409",
-  "mail": "10920751@pu.edu.tw",
-  "lab": 875
+  "name": "楊子青",
+  "mail": "tcyang@pu.edu.tw",
+  "lab": 579
 }
 
-doc_ref = db.collection("靜宜資管").document("xuziens")
+doc_ref = db.collection("靜宜資管").document("tcyang")
 doc_ref.set(doc)

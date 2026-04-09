@@ -6,9 +6,9 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-doc_ref = db.document("靜宜資管/tcyang")
+doc_ref = db.document("靜宜資管/xuzien")
 doc = doc_ref.get()
 result = doc.to_dict()
-print("文件內容為：{}".format(result))
-print("教師姓名："+result.get("name"))
-print("教師郵件：" + result["mail"])
+print(f"姓名:{result["name"]},研究室在{result["lab"]},電子郵件為{result["mail"]}")
+
+#靜宜資管/xuzien中所需要的相關資料顯示出來

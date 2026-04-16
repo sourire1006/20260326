@@ -23,6 +23,16 @@ firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
 
+db = firestore.client()
+
+keyword = input("請輸入姓名關鍵字")
+collection_ref = db.collection("靜宜資管")
+docs = collection_ref.get()
+for doc in docs:
+    teacher = doc.to_dict()
+    if keyword in teacher["name"]:
+        print(teacher)
+
 @app.route("/")
 def index():
     link = "<h1>歡迎進入徐梓恩的網站20260416</h1>"
@@ -50,13 +60,22 @@ def spider():
     for i in result:
         R += i.text + i.get("href") + "<br>"
     return R
-#------------------------------未完成程式
-#@app.route("/read2",methods=["GET", "POST"])
-#def read2():
 
-        
+@app.route("/read2")
+def read2():
+    Result = ""
+    keyword = "徐"
+    db = firestore.client()
+    collection_ref = db.collection("靜宜資管")
+    docs = collection_ref.get()
+    for doc in docs:
+        teacher = doc.to_dict()
+        if keyword in teacher["name"]:
+            Result += str(teacher) + "<br>"
+    if Result == "":
+        Result = "抱歉查無此資料"
+    return Result
     
-#------------------------------
 @app.route("/read")
 def read():
     Result = ""

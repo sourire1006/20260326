@@ -25,13 +25,7 @@ app = Flask(__name__)
 
 db = firestore.client()
 
-keyword = input("請輸入姓名關鍵字")
-collection_ref = db.collection("靜宜資管")
-docs = collection_ref.get()
-for doc in docs:
-    teacher = doc.to_dict()
-    if keyword in teacher["name"]:
-        print(teacher)
+
 
 @app.route("/")
 def index():
@@ -61,21 +55,22 @@ def spider():
         R += i.text + i.get("href") + "<br>"
     return R
 
-@app.route("/read2")
+@app.route("/read2", methods=["GET", "POST"])
 def read2():
-    Result = ""
-    keyword = "徐"
-    db = firestore.client()
-    collection_ref = db.collection("靜宜資管")
-    docs = collection_ref.get()
-    for doc in docs:
-        teacher = doc.to_dict()
-        if keyword in teacher["name"]:
-            Result += str(teacher) + "<br>"
-    if Result == "":
-        Result = "抱歉查無此資料"
-    return Result
-    
+    if request.method == "POST":
+        keyword = "徐"
+        Result == ""
+
+        collection_ref = db.collection("靜宜資管")
+        docs = collection_ref.get()
+        for doc in docs:
+            teacher = doc.to_dict()
+            if keyword and keyword in teacher.get("name", ""):
+                Result += str(teacher) + "<br>"
+        if Result == "" :
+            Result = "抱歉查無此資料"
+        return Result   
+
 @app.route("/read")
 def read():
     Result = ""
@@ -98,7 +93,7 @@ def today():
 
 @app.route("/me")
 def me():
-    return render_template("mis2026b.html")
+    return render_template("introduce.html")
 
 @app.route("/welcome", methods=["GET"])
 def welcome():

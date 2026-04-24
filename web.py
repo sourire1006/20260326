@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 from flask import Flask, render_template,request
 from datetime import datetime
 
+app = Flask(__name__)
+
 import os
 import json
 import firebase_admin
@@ -29,7 +31,7 @@ db = firestore.client()
 
 @app.route("/")
 def index():
-    link = "<h1>歡迎進入徐梓恩的網站20260416</h1>"
+    link = "<h1>歡迎進入徐梓恩的網站</h1>"
     link += "<a href=/mis>課程</a><hr>"
     link += "<a href=/today>現在日期時間</a><hr>"
     link += "<a href=/me>關於我</a><hr>"
@@ -38,8 +40,63 @@ def index():
     link += "<a href=/calculate>次方根號傳值</a><hr>"
     link += "<a href=/read>讀取Firestore資料</a><hr>"
     link += "<a href=/read2>查詢老師相關資料</a><hr>"
-    link += "<a href=/spider>本學期課程</a><hr>"
+    link += "<a href=/spider>爬取本學期課程</a><hr>"
+    link += "<a href=/spider1>爬取即將上映電影</a><hr>"
     return link
+
+@app.route("/spider1")
+def spider1():
+    # Flask 用來從網址（URL）中抓取資料的方法，q為變數詳細查詢的替代詞
+    q = request.args.get("q")
+
+    #問程式：「使用者是不是還沒輸入關鍵字？」
+    if not q:
+
+        #return ''' ... '''----這部分回傳的是一段 HTML 碼，它建構了使用者看得到的介面：
+        return '''
+            <h2>電影搜尋系統</h2>
+            <form action="/spider1" method="get">
+                <input type="text" name="q" placeholder="請輸入電影關鍵字">
+                <button type="submit">搜尋</button>
+            </form>
+            <br><a href='/'>回首頁</a>
+        '''
+
+    R = f"<h2>搜尋到的關鍵字是：{q}</h2>"
+    url = "https://www.atmovies.com.tw/movie/next/"
+    
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"} #避免被對方網站阻擋
+    data = requests.get(url, headers=headers) #真正出發去把網頁的 HTML 原始碼抓回來
+    data.encoding = "utf-8" #確保中文字不會變成亂碼
+    
+    #BeautifulSoup: 將雜亂的 HTML 字串變成像「樹狀結構」
+    sp = BeautifulSoup(data.text, "html.parser")
+    result = sp.select(".filmListAllX li") #找出所有在filmListAllX標籤底下的 <li> 
+    
+    found = False
+    #針對抓到的每一部電影，一個一個檢查
+    for item in result: 
+        img_tag = item.find("img")
+        if img_tag:
+            title = img_tag.get("alt") #電影標題通常寫在圖片的 alt的屬性
+
+            if q in title: #只有當你輸入的關鍵字（q）出現在電影標題時，才會執行裡面的動作
+                found = True
+                link = "https://www.atmovies.com.tw" + item.find("a").get("href")
+                img = item.find("img").get("src")
+                
+                R += f'<a href="{link}">{title}</a><br>'
+                R += f'<img src="{img}"><br><br>'
+            
+    if not found:
+        R += "抱歉，沒有找到這部電影的資訊"
+        
+    R += "<br><a href='/spider1'>重新搜尋</a> | <a href='/'>回首頁</a>"
+    return R
+    
+#確保程式是「直接被執行」的，而不是「被當作工具包導入」
+if __name__ == "__main__": 
+    app.run(debug=True)
 
 @app.route("/spider")
 def spider():
@@ -53,23 +110,7 @@ def spider():
 
     for i in result:
         R += i.text + i.get("href") + "<br>"
-    return R
-
-@app.route("/read2", methods=["GET", "POST"])
-def read2():
-    if request.method == "POST":
-        keyword = "徐"
-        Result == ""
-
-        collection_ref = db.collection("靜宜資管")
-        docs = collection_ref.get()
-        for doc in docs:
-            teacher = doc.to_dict()
-            if keyword and keyword in teacher.get("name", ""):
-                Result += str(teacher) + "<br>"
-        if Result == "" :
-            Result = "抱歉查無此資料"
-        return Result   
+    return R   
 
 @app.route("/read")
 def read():
@@ -81,6 +122,23 @@ def read():
     for doc in docs:         
         Result += str(doc.to_dict()) + "<br>"    
     return Result   
+
+@app.route("/read2")
+def read2():
+        Result = ""
+        kryword = "徐"
+        db = firestore.client()
+        collection_ref = db.collection("靜宜資管")
+        docs = collection_ref.get()
+        for doc in docs:
+            teacher = doc.to_dict()
+            if keyword in teacher["name"]:
+                Result += str(teacher) + "<br>"
+
+        if Result == "":
+            Result = "抱歉查無此資料"
+        return Result   
+
 
 @app.route("/mis")
 def course():

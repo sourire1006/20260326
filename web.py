@@ -41,9 +41,92 @@ def index():
     link += "<a href=/read>讀取Firestore資料</a><hr>"
     link += "<a href=/read2>查詢老師相關資料</a><hr>"
     link += "<a href=/spider>爬取本學期課程</a><hr>"
-    link += "<a href=/spider1>爬取即將上映電影</a><hr>"
     link += "<a href=/spidermovie>爬取即將上映電影集合</a><hr>"
+    link += "<a href=/spider1>爬取即將上映電影</a><hr>"
     return link
+
+@app.route("/spider1")
+def spider1():
+    q = request.args.get("q")
+
+    if not q:
+        return '''
+            <h2>電影搜尋系統</h2>
+            <form action="/spider1" method="get">
+                <input type="text" name="q" placeholder="請輸入電影關鍵字">
+                <button type="submit">搜尋</button>
+            </form>
+            <br><a href='/'>回首頁</a>
+        '''
+
+    # 必須加入此 Meta 標籤，圖片才能繞過防盜連順利顯示
+    R = '<meta name="referrer" content="no-referrer">'
+    R += f"<h2>搜尋到的關鍵字是：{q}</h2>"
+    
+    url = "https://www.atmovies.com.tw/movie/next/"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    
+    try:
+        data = requests.get(url, headers=headers)
+        data.encoding = "utf-8"
+        sp = BeautifulSoup(data.text, "html.parser")
+        result = sp.select(".filmListAllX li") 
+    except:
+        return "網路連線異常，請稍後再試。<br><a href='/spider1'>返回</a>"
+    
+    found = False
+    for item in result: 
+        img_tag = item.find("img")
+        if img_tag:
+            title = img_tag.get("alt") 
+
+            if q in title: 
+                found = True
+                link = "https://www.atmovies.com.tw" + item.find("a").get("href")
+                
+                # 處理圖片網址補完
+                img_src = img_tag.get("src")
+                if img_src.startswith("/"): 
+                    img_url = "https://www.atmovies.com.tw" + img_src
+                else:
+                    img_url = img_src
+                
+                # 擷取上映日期
+                info_text = item.get_text()
+                date_str = "暫無日期資訊"
+                if "上映日期：" in info_text:
+                    date_str = info_text.split("上映日期：")[1].split()[0]
+
+                # 組合 HTML (已刪除劇情簡介部分)
+                R += f'''
+                <div style="border-bottom: 1px solid #ccc; padding: 15px; margin-bottom: 10px;">
+                    <a href="{link}" target="_blank" style="text-decoration:none;">
+                        <h3 style="margin:0; color:#2c3e50;">{title}</h3>
+                    </a>
+                    <p style="color:#e67e22; font-weight:bold;">📅 上映日期：{date_str}</p>
+                    <img src="{img_url}" style="width:150px; border-radius:5px; box-shadow: 2px 2px 5px #ccc;">
+                </div>
+                '''
+            
+    if not found:
+        R += f"<p style='color:red;'>抱歉，沒有找到包含 '{q}' 的電影資訊</p>"
+        
+    R += "<br><a href='/spider1'>重新搜尋</a> | <a href='/'>回首頁</a>"
+    return R
+
+@app.route("/spider")
+def spider():
+    R = ""
+    url = "https://www1.pu.edu.tw/~tcyang/course.html"
+    Data = requests.get(url)
+    Data.encoding = "utf-8"
+    #print(Data.text)
+    sp = BeautifulSoup(Data.text, "html.parser")
+    result=sp.select(".team-box a")
+
+    for i in result:
+        R += i.text + i.get("href") + "<br>"
+    return R   
 
 @app.route("/spidermovie")
 def spidermovie():
@@ -91,74 +174,6 @@ def spidermovie():
     R += "網站最新更新日期" +  lastupdate + "<br>"
     R += f"<br><b>總共爬取 {total} 部電影到資料庫</b>"
     return R
-
-@app.route("/spider1")
-def spider1():
-    # Flask 用來從網址（URL）中抓取資料的方法，q為變數詳細查詢的替代詞
-    q = request.args.get("q")
-
-    #問程式：「使用者是不是還沒輸入關鍵字？」
-    if not q:
-
-        #return ''' ... '''----這部分回傳的是一段 HTML 碼，它建構了使用者看得到的介面：
-        return '''
-            <h2>電影搜尋系統</h2>
-            <form action="/spider1" method="get">
-                <input type="text" name="q" placeholder="請輸入電影關鍵字">
-                <button type="submit">搜尋</button>
-            </form>
-            <br><a href='/'>回首頁</a>
-        '''
-
-    R = f"<h2>搜尋到的關鍵字是：{q}</h2>"
-    url = "https://www.atmovies.com.tw/movie/next/"
-    
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"} #避免被對方網站阻擋
-    data = requests.get(url, headers=headers) #真正出發去把網頁的 HTML 原始碼抓回來
-    data.encoding = "utf-8" #確保中文字不會變成亂碼
-    
-    #BeautifulSoup: 將雜亂的 HTML 字串變成像「樹狀結構」
-    sp = BeautifulSoup(data.text, "html.parser")
-    result = sp.select(".filmListAllX li") #找出所有在filmListAllX標籤底下的 <li> 
-    
-    found = False
-    #針對抓到的每一部電影，一個一個檢查
-    for item in result: 
-        img_tag = item.find("img")
-        if img_tag:
-            title = img_tag.get("alt") #電影標題通常寫在圖片的 alt的屬性
-
-            if q in title: #只有當你輸入的關鍵字（q）出現在電影標題時，才會執行裡面的動作
-                found = True
-                link = "https://www.atmovies.com.tw" + item.find("a").get("href")
-                img = item.find("img").get("src")
-                
-                R += f'<a href="{link}">{title}</a><br>'
-                R += f'<img src="{img}"><br><br>'
-            
-    if not found:
-        R += "抱歉，沒有找到這部電影的資訊"
-        
-    R += "<br><a href='/spider1'>重新搜尋</a> | <a href='/'>回首頁</a>"
-    return R
-    
-#確保程式是「直接被執行」的，而不是「被當作工具包導入」
-if __name__ == "__main__": 
-    app.run(debug=True)
-
-@app.route("/spider")
-def spider():
-    R = ""
-    url = "https://www1.pu.edu.tw/~tcyang/course.html"
-    Data = requests.get(url)
-    Data.encoding = "utf-8"
-    #print(Data.text)
-    sp = BeautifulSoup(Data.text, "html.parser")
-    result=sp.select(".team-box a")
-
-    for i in result:
-        R += i.text + i.get("href") + "<br>"
-    return R   
 
 @app.route("/read")
 def read():
